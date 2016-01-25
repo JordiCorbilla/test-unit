@@ -72,7 +72,7 @@ module Test
           def output_setup_end
             suite_name = @suite.to_s
             suite_name = @suite.name if @suite.kind_of?(Module)
-            output("Loaded suite #{suite_name}")
+            #output("Loaded suite #{suite_name}")
           end
 
           def attach_to_mediator
@@ -177,10 +177,26 @@ module Test
           end
 
           def output_fault_in_detail(fault)
+          	output("")
+          	message = fault.user_message
+          	if message.nil?
+          		message = fault.message
+          		s = message
+          	end
+          	if !message.nil?
+          		puts message
+          		message = message.delete("\n")
+          		s = ""
+				message.each_line do |line|
+					s = s + "#{line.chomp}" + " "
+				end          		
+          	end
+          	output("##teamcity[testFailed type='#{fault.label}' name='#{fault.test_name}' details='#{s}']")              
             if fault.is_a?(Failure) and
                 fault.inspected_expected and fault.inspected_actual
               output_single("#{fault.label}: ")
               output(fault.test_name, fault_color(fault))
+          	  #output("##teamcity[testFailed type='#{fault.label}' name='#{fault.test_name}' details='#{fault.user_message}'")              
               output_fault_backtrace(fault)
               output_failure_message(fault)
             else
@@ -188,10 +204,12 @@ module Test
                 output_single("#{fault.label}: ")
                 output_single(fault.test_name, fault_color(fault))
                 output_fault_message(fault)
+          	  #output("##teamcity[testFailed type='#{fault.label}' name='#{fault.test_name}' details='#{fault.user_message}'")                              
               else
                 output_single(fault.label, fault_color(fault))
                 output_fault_message(fault)
                 output(fault.test_name)
+          	  	#output("##teamcity[testFailed type='#{fault.label}' name='#{fault.test_name}' details='#{fault.user_message}'")                              
               end
               output_fault_backtrace(fault)
             end
@@ -340,8 +358,9 @@ module Test
           end
 
           def test_started(test)
+          	output("")
+            output("##teamcity[testStarted name='#{test}']")
             return unless output?(VERBOSE)
-
             name = test.name.sub(/\(.+?\)\z/, '')
             right_space = 8 * 2
             left_space = @progress_row_max - right_space
@@ -356,9 +375,9 @@ module Test
               output_progress(".", color("pass-marker"))
             end
             @already_outputted = false
-
+            output("")
+			output("##teamcity[testFinished name='#{test}']")
             return unless output?(VERBOSE)
-
             output(": (%f)" % (Time.now - @test_start), nil, VERBOSE)
           end
 
@@ -691,3 +710,4 @@ module Test
     end
   end
 end
+
